@@ -8,7 +8,7 @@ import java.util.List;
 
 public class InputVectorProcessing {
 
-    public static List<double[]> readCSV(String path){
+    public static List<double[]> readCSV(String path) {
         try (BufferedReader br = Files.newBufferedReader(Paths.get(path))) {
 
             List<double[]> inputVectors = new ArrayList<>();
@@ -16,9 +16,9 @@ public class InputVectorProcessing {
             br.readLine();
 
             while ((line = br.readLine()) != null) {
-                String[] vector = new String[5];
+                String[] vector = new String[4];
                 String[] splitLine = line.split(",");
-                System.arraycopy(splitLine,0,vector,0,splitLine.length-1);
+                System.arraycopy(splitLine, 0, vector, 0, splitLine.length - 1);
                 inputVectors.add(Arrays.stream(vector).mapToDouble(Double::parseDouble).toArray());
             }
             return inputVectors;

@@ -1,10 +1,10 @@
 import javafx.scene.paint.Color;
 
 public class Neuron {
-    private int x,y;
+    private int x, y;
     private double[] vector;
     private Color color;
-  
+
 
     public Neuron(int x, int y, double[] vector) {
         this.x = x;

@@ -1,9 +1,7 @@
-
 import javafx.application.Platform;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class SOM {
@@ -23,10 +21,9 @@ public class SOM {
     private final double minPotential = 0.75;
     private final int epoch;
     private final double K = 0.02;
+    private int neightbours;
     private final List<double[]> inputVectors;
     private final boolean isGaussian = false;
-    private final List<Color> colorsList = new ArrayList<>();
-    private int colorIndex = 0;
 
     public SOM(int neuronAmount, int epoch, List<double[]> inputVectors, Controller controller) {
         this.inputVectors = inputVectors;
@@ -35,14 +32,14 @@ public class SOM {
         sampleSize = neuronAmount;
 //        sigma0 = sampleSize / 2;
         initMaps(neuronAmount);
-        initColorList();
         controller.createMap(neuronAmount);
+        neightbours = neuronAmount / 10 > 0 ? neuronAmount / 10 : 1;
     }
 
     //True
     public void initMaps(int neuronAmount) {
         List<double[]> randVectors = randomSelectionOfVectors((int) Math.pow(neuronAmount, 2), inputVectors);
-       // List<double[]> randVectors = generateVectors((int) Math.pow(neuronAmount, 2), inputVectors.get(0).length);
+        // List<double[]> randVectors = generateVectors((int) Math.pow(neuronAmount, 2), inputVectors.get(0).length);
         neuronMap = new Neuron[neuronAmount][neuronAmount];
         potentialMap = new double[neuronAmount][neuronAmount];
         uMatrix = new double[neuronAmount][neuronAmount];
@@ -55,32 +52,33 @@ public class SOM {
             }
         }
     }
+
     //True
-    public List<double[]> generateVectors(int i, int vectorLength){
+    public List<double[]> generateVectors(int i, int vectorLength) {
         List<double[]> vectors = new ArrayList<>();
-        for(int j = 0; j< i; j++){
+        for (int j = 0; j < i; j++) {
             double[] newVector = new double[vectorLength];
-            for(int k =0;k<newVector.length;k++){
+            for (int k = 0; k < newVector.length; k++) {
                 newVector[k] = Math.random();
             }
             vectors.add(newVector);
         }
         return vectors;
     }
+
     //True
     public List<double[]> randomSelectionOfVectors(int i, List<double[]> vectors) {
         List<double[]> randVectors = new ArrayList<>();
-        List<Integer> usedIds = new ArrayList<>();
+        // List<Integer> usedIds = new ArrayList<>();
         int j = 0;
         while (j < i) {
             int idVector = (int) (Math.random() * vectors.size() - 1);
-            double[] arr;
-            if (!usedIds.contains(idVector)) {
-                arr = vectors.get(idVector).clone();
-                usedIds.add(idVector);
-                randVectors.add(arr);
-                j++;
-            }
+            //   if (!usedIds.contains(idVector)) {
+            double[] arr = vectors.get(idVector).clone();
+            //       usedIds.add(idVector);
+            randVectors.add(arr);
+            j++;
+            //   }
         }
         return randVectors;
     }
@@ -99,12 +97,11 @@ public class SOM {
                 for (int j = 0; j < inputVectors.size(); j++) {
                     double[] vector = inputVectors.get(j).clone();
                     Neuron winner = getWinners(vector);
-                  //  System.out.println("winner X: " + winner.getX() + " Y: " + winner.getY());
-                   /* if (winner.getColor() == null) {
-                        winner.setColor(colorsList.get(colorIndex));
-                        colorIndex++;
-                    }*/
-                    System.out.println(winner.getX() +""+ winner.getY());
+                    //  System.out.println("winner X: " + winner.getX() + " Y: " + winner.getY());
+                    if (winner.getColor() == null) {
+                        winner.setColor(new Color(Math.random(), Math.random(), Math.random(), 1));
+                    }
+                    System.out.println(winner.getX() + "" + winner.getY());
                     clarifyWeights(winner, vector);
                     try {
                         Thread.sleep(1); // Wait for 1 sec before updating the color
@@ -116,22 +113,25 @@ public class SOM {
                                 controller.show(neuronMap);
                             });
                 }
+                if (neightbours != 0 && iteration != 0 && iteration % (epoch / neightbours) == 0)
+                    neightbours--; //todo: количество соседей
             }
             System.out.println("Stop train");
         }).start();
         controller.show(neuronMap);
     }
 
-    public void setNeuronColors(){
-        for(int i =0; i< neuronMap.length;i++){
-            for(int j = 0; j<neuronMap[0].length; j++){
+    public void setNeuronColors() {
+        for (int i = 0; i < neuronMap.length; i++) {
+            for (int j = 0; j < neuronMap[0].length; j++) {
                 double[] vector = neuronMap[i][j].getVector();
-               // double sum =(Arrays.stream(vector).sum()/vector.length)*1000;
-                double first = vector[0]*10000-(int)(vector[0]*10000); //todo: 10000 это точность после запятой
-                neuronMap[i][j].setColor(new Color(first,0,0,1));
+                // double sum =(Arrays.stream(vector).sum()/vector.length)*1000;
+                double first = vector[2] * 10000 - (int) (vector[2] * 10000); //todo: 10000 это точность после запятой
+                neuronMap[i][j].setColor(new Color(first, 0, 0, 1));
             }
         }
     }
+
     //Looks true
     public Neuron getWinners(double[] vector) {
         double sqSum = 0;
@@ -151,7 +151,7 @@ public class SOM {
         Neuron winner = neuronMap[0][0];
         for (int i = 0; i < weight.length; i++) {
             for (int j = 0; j < weight[0].length; j++) {
-                if (weight[i][j] < minWeight && potentialMap[i][j]>=minPotential){
+                if (weight[i][j] < minWeight && potentialMap[i][j] >= minPotential) {
                     winner = neuronMap[i][j];
                     minWeight = weight[i][j];
                 }
@@ -160,35 +160,44 @@ public class SOM {
         for (int i = 0; i < neuronMap.length; i++) {
             for (int j = 0; j < neuronMap[0].length; j++) {
                 if (neuronMap[i][j] != winner) {
-                    potentialMap[i][j] += 1/ sampleSize*sampleSize;
+                    potentialMap[i][j] += 1 / sampleSize * sampleSize;
                 } else {
                     potentialMap[i][j] -= minPotential;
                 }
-            }}
+            }
+        }
         return winner;
     }
 
     public void clarifyWeights(Neuron winner, double[] vector) {
         int x = winner.getX();
         int y = winner.getY();
-        for (Neuron[] neurons : neuronMap) {
+        for (int i = 0; i < neuronMap.length; i++) {
+            Neuron[] neurons = neuronMap[i];
             for (int j = 0; j < neuronMap[0].length; j++) {
                 double[] mapVector = neurons[j].getVector();
-                double h = learningRate * (isGaussian ? gaussianNeighborhood(neurons[j], winner) : rectangularNeighborhood(neurons[j]));
-                //  if (h != 0) neuronMap[i][j].setColor(winner.getColor());
-                if (neurons[j].getX() != x || neurons[j].getX() != y)
+                double h = learningRate * (isGaussian ? gaussianNeighborhood(neurons[j], winner) : rectNeig(neurons[j], winner)); //rectangularNeighborhood(neurons[j]));
+                if (h != 0) {
+                    neuronMap[i][j].setColor(winner.getColor());
                     for (int k = 0; k < mapVector.length; k++) {
                         mapVector[k] = mapVector[k] + h * (vector[k] - mapVector[k]);
                     }
+                }
             }
         }
-        setNeuronColors();
+        // setNeuronColors();
     }
 
+    public double rectNeig(Neuron neuron, Neuron winner) {
+        if ((neuron.getX() <= winner.getX() + neightbours && neuron.getX() >= winner.getX() - neightbours) && (neuron.getY() <= winner.getY() + neightbours && neuron.getY() >= winner.getY() - neightbours)) {
+            // System.out.println("Neighborhood X: " + neuron.getX() + " Y: " + neuron.getY());
+            return 1;
+        } else return 0;
+    }
 
     public double rectangularNeighborhood(Neuron neuron) {
         if (weight[neuron.getX()][neuron.getY()] <= K && weight[neuron.getX()][neuron.getY()] >= -K) {
-           // System.out.println("Neighborhood X: " + neuron.getX() + " Y: " + neuron.getY());
+            // System.out.println("Neighborhood X: " + neuron.getX() + " Y: " + neuron.getY());
             return K;
         } else return 0;
     }
@@ -214,66 +223,5 @@ public class SOM {
 //              uMatrix[i] =
 //            }
 //        }
-    }
-
-    public Neuron[][] getNeuronMap() {
-        return neuronMap;
-    }
-
-    public void initColorList() {
-        colorsList.add(Color.RED);
-        colorsList.add(Color.BLUE);
-        colorsList.add(Color.ORANGE);
-        colorsList.add(Color.CYAN);
-        colorsList.add(Color.GREEN);
-        colorsList.add(Color.MAGENTA);
-        colorsList.add(Color.YELLOW);
-        colorsList.add(Color.LIME);
-        colorsList.add(Color.DARKBLUE);
-        colorsList.add(Color.PURPLE);
-        colorsList.add(Color.OLIVE);
-        colorsList.add(Color.GREY);
-        colorsList.add(Color.CORNFLOWERBLUE);
-        colorsList.add(Color.VIOLET);
-        colorsList.add(Color.SIENNA);
-        colorsList.add(Color.TOMATO);
-        colorsList.add(Color.TAN);
-        colorsList.add(Color.DARKSALMON);
-        colorsList.add(Color.ROSYBROWN);
-        colorsList.add(Color.TEAL);
-        colorsList.add(Color.PLUM);
-        colorsList.add(Color.LIGHTPINK);
-        colorsList.add(Color.GOLD);
-        colorsList.add(Color.HOTPINK);
-        colorsList.add(Color.SLATEBLUE);
-        colorsList.add(Color.DARKKHAKI);
-        colorsList.add(Color.DIMGRAY);
-        colorsList.add(Color.DARKVIOLET);
-        colorsList.add(Color.TURQUOISE);
-        colorsList.add(Color.NAVAJOWHITE);
-        colorsList.add(Color.MEDIUMAQUAMARINE);
-        colorsList.add(Color.DARKGREEN);
-        colorsList.add(Color.KHAKI);
-        colorsList.add(Color.GREENYELLOW);
-        colorsList.add(Color.FIREBRICK);
-        colorsList.add(Color.MEDIUMORCHID);
-        colorsList.add(Color.FUCHSIA);
-        colorsList.add(Color.OLIVEDRAB);
-        colorsList.add(Color.DEEPPINK);
-        colorsList.add(Color.DARKOLIVEGREEN);
-        colorsList.add(Color.OLDLACE);
-        colorsList.add(Color.LIGHTGOLDENRODYELLOW);
-        colorsList.add(Color.BEIGE);
-        colorsList.add(Color.BLACK);
-        colorsList.add(Color.PEACHPUFF);
-        colorsList.add(Color.MOCCASIN);
-        colorsList.add(Color.SALMON);
-        colorsList.add(Color.SILVER);
-        colorsList.add(Color.AZURE);
-        colorsList.add(Color.DODGERBLUE);
-        colorsList.add(Color.WHITE);
-        colorsList.add(Color.WHEAT);
-        colorsList.add(Color.BROWN);
-        colorsList.add(Color.PAPAYAWHIP);
     }
 }

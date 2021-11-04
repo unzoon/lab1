@@ -4,12 +4,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class MainClass extends Application {
@@ -37,7 +32,7 @@ public class MainClass extends Application {
 
         List<double[]> inputVectors = InputVectorProcessing.readCSV("C:\\Users\\Asiri\\Desktop\\lab1-main\\Iris.csv");
         InputVectorProcessing.normalizing(inputVectors);
-        som = new SOM(10,150,inputVectors, controller);
+        som = new SOM(20, 250, inputVectors, controller);
         som.train();
 
     }

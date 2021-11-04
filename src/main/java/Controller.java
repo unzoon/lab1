@@ -1,15 +1,8 @@
-
 import javafx.fxml.FXML;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
-
-
 import javafx.scene.shape.Rectangle;
 
-
-import java.awt.*;
 import java.io.IOException;
-import java.util.Arrays;
 
 
 public class Controller {
@@ -54,6 +47,7 @@ public class Controller {
             valY += step;
         }
     }
+
     public void show(Neuron[][] neurons) {
 //
         for (int i = 0; i < neurons.length; i++) {
