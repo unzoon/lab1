@@ -18,7 +18,7 @@ public class SOM {
     //функция, уменьшающая количество соседей с при увеличении итерации (монотонно убывающий),
     private double sigma;
     private double sampleSize;
-    private double sigma0 = 0.003;
+    private double sigma0 = 0.007;
     private final double minPotential = 0.75;
     private final int epoch;
     private final double K = 0.02;
@@ -61,7 +61,7 @@ public class SOM {
             int idVector = (int) (Math.random() * vectors.size() - 1);
             double[] arr;
             if (!usedIds.contains(idVector)) {
-                arr = vectors.get((int) (Math.random() * vectors.size() - 1)).clone();
+                arr = vectors.get(idVector).clone();
                 usedIds.add(idVector);
                 randVectors.add(arr);
                 j++;
@@ -127,12 +127,21 @@ public class SOM {
         winner = neuronMap[0][0];
         for (int i = 0; i < weight.length; i++) {
             for (int j = 0; j < weight[0].length; j++) {
-                if (weight[i][j] < minWeight) {
+                if (weight[i][j] < minWeight && potentialMap[i][j]>=minPotential) {
                     winner = neuronMap[i][j];
                     minWeight = weight[i][j];
                 }
             }
         }
+
+        for (int i = 0; i < neuronMap.length; i++) {
+            for (int j = 0; j < neuronMap[0].length; j++) {
+                if (neuronMap[i][j] != winner) {
+                    potentialMap[i][j] += 1/ sampleSize*sampleSize;
+                } else {
+                    potentialMap[i][j] -= minPotential;
+                }
+            }}
         return winner;
     }
 
@@ -183,6 +192,8 @@ public class SOM {
 //            }
 //        }
     }
+
+
 
     public Neuron[][] getNeuronMap() {
         return neuronMap;
