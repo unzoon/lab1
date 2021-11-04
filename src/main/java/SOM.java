@@ -3,6 +3,7 @@ import javafx.application.Platform;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class SOM {
@@ -18,7 +19,7 @@ public class SOM {
     //функция, уменьшающая количество соседей с при увеличении итерации (монотонно убывающий),
     private double sigma;
     private double sampleSize;
-    private double sigma0 = 0.007;
+    private double sigma0 = 0.003;
     private final double minPotential = 0.75;
     private final int epoch;
     private final double K = 0.02;
@@ -38,8 +39,10 @@ public class SOM {
         controller.createMap(neuronAmount);
     }
 
+    //True
     public void initMaps(int neuronAmount) {
         List<double[]> randVectors = randomSelectionOfVectors((int) Math.pow(neuronAmount, 2), inputVectors);
+       // List<double[]> randVectors = generateVectors((int) Math.pow(neuronAmount, 2), inputVectors.get(0).length);
         neuronMap = new Neuron[neuronAmount][neuronAmount];
         potentialMap = new double[neuronAmount][neuronAmount];
         uMatrix = new double[neuronAmount][neuronAmount];
@@ -52,7 +55,19 @@ public class SOM {
             }
         }
     }
-
+    //True
+    public List<double[]> generateVectors(int i, int vectorLength){
+        List<double[]> vectors = new ArrayList<>();
+        for(int j = 0; j< i; j++){
+            double[] newVector = new double[vectorLength];
+            for(int k =0;k<newVector.length;k++){
+                newVector[k] = Math.random();
+            }
+            vectors.add(newVector);
+        }
+        return vectors;
+    }
+    //True
     public List<double[]> randomSelectionOfVectors(int i, List<double[]> vectors) {
         List<double[]> randVectors = new ArrayList<>();
         List<Integer> usedIds = new ArrayList<>();
@@ -78,19 +93,18 @@ public class SOM {
         new Thread(() -> {
             for (int iteration = 0; iteration < epoch; iteration++) {
                 System.out.println("Iteration " + iteration);
-                learningRate = A / (B + iteration);
+                learningRate = A / (B + iteration); // todo: ты задаешь рейт сверху, а потом перевычисляешь его тут
                 sigma = sigma0 * Math.exp(-(iteration / learningRate));
 //                sigma = sigma0 / (1 + (iteration / epoch));
-
-
                 for (int j = 0; j < inputVectors.size(); j++) {
                     double[] vector = inputVectors.get(j).clone();
                     Neuron winner = getWinners(vector);
-                    System.out.println("winner X: " + winner.getX() + " Y: " + winner.getY());
-                    if (winner.getColor() == null) {
+                  //  System.out.println("winner X: " + winner.getX() + " Y: " + winner.getY());
+                   /* if (winner.getColor() == null) {
                         winner.setColor(colorsList.get(colorIndex));
                         colorIndex++;
-                    }
+                    }*/
+                    System.out.println(winner.getX() +""+ winner.getY());
                     clarifyWeights(winner, vector);
                     try {
                         Thread.sleep(1); // Wait for 1 sec before updating the color
@@ -108,10 +122,20 @@ public class SOM {
         controller.show(neuronMap);
     }
 
+    public void setNeuronColors(){
+        for(int i =0; i< neuronMap.length;i++){
+            for(int j = 0; j<neuronMap[0].length; j++){
+                double[] vector = neuronMap[i][j].getVector();
+               // double sum =(Arrays.stream(vector).sum()/vector.length)*1000;
+                double first = vector[0]*10000-(int)(vector[0]*10000); //todo: 10000 это точность после запятой
+                neuronMap[i][j].setColor(new Color(first,0,0,1));
+            }
+        }
+    }
+    //Looks true
     public Neuron getWinners(double[] vector) {
-        Neuron winner;
         double sqSum = 0;
-        weight = new double[neuronMap.length][neuronMap.length];
+        weight = new double[neuronMap.length][neuronMap[0].length];
         for (int i = 0; i < neuronMap.length; i++) {
             for (int j = 0; j < neuronMap[0].length; j++) {
                 double[] mapVector = neuronMap[i][j].getVector();
@@ -124,16 +148,15 @@ public class SOM {
             }
         }
         double minWeight = weight[0][0];
-        winner = neuronMap[0][0];
+        Neuron winner = neuronMap[0][0];
         for (int i = 0; i < weight.length; i++) {
             for (int j = 0; j < weight[0].length; j++) {
-                if (weight[i][j] < minWeight && potentialMap[i][j]>=minPotential) {
+                if (weight[i][j] < minWeight && potentialMap[i][j]>=minPotential){
                     winner = neuronMap[i][j];
                     minWeight = weight[i][j];
                 }
             }
         }
-
         for (int i = 0; i < neuronMap.length; i++) {
             for (int j = 0; j < neuronMap[0].length; j++) {
                 if (neuronMap[i][j] != winner) {
@@ -148,24 +171,24 @@ public class SOM {
     public void clarifyWeights(Neuron winner, double[] vector) {
         int x = winner.getX();
         int y = winner.getY();
-
-        for (int i = 0; i < neuronMap.length; i++) {
+        for (Neuron[] neurons : neuronMap) {
             for (int j = 0; j < neuronMap[0].length; j++) {
-                    double[] mapVector = neuronMap[i][j].getVector();
-                    double h = learningRate * (isGaussian ? gaussianNeighborhood(neuronMap[i][j], winner) : rectangularNeighborhood(neuronMap[i][j]));
-                    if (h != 0) neuronMap[i][j].setColor(winner.getColor());
-                if (neuronMap[i][j].getX() != x || neuronMap[i][j].getX() != y)
+                double[] mapVector = neurons[j].getVector();
+                double h = learningRate * (isGaussian ? gaussianNeighborhood(neurons[j], winner) : rectangularNeighborhood(neurons[j]));
+                //  if (h != 0) neuronMap[i][j].setColor(winner.getColor());
+                if (neurons[j].getX() != x || neurons[j].getX() != y)
                     for (int k = 0; k < mapVector.length; k++) {
-                        mapVector[k] = mapVector[k] + h * (vector[k]-mapVector[k]);
+                        mapVector[k] = mapVector[k] + h * (vector[k] - mapVector[k]);
                     }
-                }
+            }
         }
+        setNeuronColors();
     }
 
 
     public double rectangularNeighborhood(Neuron neuron) {
         if (weight[neuron.getX()][neuron.getY()] <= K && weight[neuron.getX()][neuron.getY()] >= -K) {
-            System.out.println("Neighborhood X: " + neuron.getX() + " Y: " + neuron.getY());
+           // System.out.println("Neighborhood X: " + neuron.getX() + " Y: " + neuron.getY());
             return K;
         } else return 0;
     }
@@ -192,8 +215,6 @@ public class SOM {
 //            }
 //        }
     }
-
-
 
     public Neuron[][] getNeuronMap() {
         return neuronMap;

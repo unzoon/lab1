@@ -17,11 +17,8 @@ public class InputVectorProcessing {
 
             while ((line = br.readLine()) != null) {
                 String[] vector = new String[5];
-                vector[0]=line.split(",")[0];
-                vector[1]= line.split(",")[1];
-                vector[2]=line.split(",")[2];
-                vector[3]= line.split(",")[3];
-                vector[4]= line.split(",")[4];
+                String[] splitLine = line.split(",");
+                System.arraycopy(splitLine,0,vector,0,splitLine.length-1);
                 inputVectors.add(Arrays.stream(vector).mapToDouble(Double::parseDouble).toArray());
             }
             return inputVectors;
@@ -33,17 +30,15 @@ public class InputVectorProcessing {
     }
 
     public static void normalizing(List<double[]> inputVectors) {
-        for (int i = 0; i <inputVectors.size() ; i++) {
+        for (double[] vector : inputVectors) {
             double sqSum = 0;
-            double[] inputVector = inputVectors.get(i);
-            for (int j = 0; j < inputVector.length; j++) {
-                sqSum+= Math.pow(inputVector[j],2);
+            for (double v : vector) {
+                sqSum += Math.pow(v, 2);
             }
             sqSum = Math.sqrt(sqSum);
-            for (int k = 0; k < inputVector.length; k++) {
-                inputVector[k] =  inputVector[k]/sqSum;
+            for (int k = 0; k < vector.length; k++) {
+                vector[k] = vector[k] / sqSum;
             }
-            inputVectors.set(i,inputVector);
         }
 
     }

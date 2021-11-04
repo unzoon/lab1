@@ -35,9 +35,9 @@ public class MainClass extends Application {
         controller.additionalInit();
         primaryStage.show();
 
-        List<double[]> inputVectors = InputVectorProcessing.readCSV("G:\\iris.csv");
+        List<double[]> inputVectors = InputVectorProcessing.readCSV("C:\\Users\\Asiri\\Desktop\\lab1-main\\Iris.csv");
         InputVectorProcessing.normalizing(inputVectors);
-        som = new SOM(10,20000,inputVectors, controller);
+        som = new SOM(10,150,inputVectors, controller);
         som.train();
 
     }
